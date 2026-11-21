@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rác Đi Đâu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Bố cục: thanh thẻ tab ở trên, màn "Hỏi AI" chia hai cột (ảnh | kết quả), phong cách nhãn dán viền dày, bóng đổ cứng. */
+:root{
+  --bg:#EAF6FF; --card:#FFFFFF; --ink:#16213E; --muted:#51617F; --line:#16213E;
+  --soft:#F1F6FC;
+  --sun:#FFD43B; --green:#2EC27E; --blue:#3AA0FF; --grey:#9AA7BC; --red:#FF6B6B;
+  --on-bin:#16213E;
+  --font-display:'Baloo 2','Nunito',system-ui,sans-serif;
+  --font-body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1A33; --card:#172645; --ink:#F2F6FF; --muted:#A9B8D6; --line:#050B1B; --soft:#1F3157;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1A33; --card:#172645; --ink:#F2F6FF; --muted:#A9B8D6; --line:#050B1B; --soft:#1F3157;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5;
+  padding-block:18px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));}
+.wrap{max-width:980px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.9rem,6vw,2.8rem);font-weight:800}
+h2{font-size:1.5rem;font-weight:800}
+h3{font-size:1.15rem;font-weight:700}
+p{margin:0}
+button{font:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:800;font-size:1.6rem;text-decoration:none;color:var(--ink)}
+.brand svg{width:44px;height:44px;flex:none}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs a{text-decoration:none;color:var(--ink);font-weight:800;padding:8px 16px;border:3px solid var(--line);border-radius:999px;background:var(--card);box-shadow:0 3px 0 var(--line)}
+.tabs a[aria-current="page"]{background:var(--sun);color:#16213E}
+
+.card{background:var(--card);border:3px solid var(--line);border-radius:22px;box-shadow:0 6px 0 var(--line);padding:18px;min-width:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:3px solid var(--line);border-radius:16px;padding:11px 18px;font-weight:800;background:var(--sun);color:#16213E;box-shadow:0 4px 0 var(--line);cursor:pointer;text-decoration:none;min-height:48px}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.btn.blue{background:var(--blue)}
+.btn.green{background:var(--green)}
+.btn.plain{background:var(--card);color:var(--ink)}
+.btn.small{min-height:40px;padding:6px 14px;font-size:.92rem}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.btn svg{width:22px;height:22px;flex:none}
+
+.hero{display:grid;gap:8px;margin-bottom:18px}
+.hero p{color:var(--muted);font-size:1.08rem;max-width:56ch}
+mark{background:var(--sun);color:#16213E;padding:0 .25em;border-radius:8px}
+
+.status{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:.92rem;border:3px solid var(--line);border-radius:999px;padding:3px 12px;background:var(--card);width:max-content;max-width:100%}
+.status i{width:12px;height:12px;border-radius:50%;background:var(--grey);border:2px solid var(--line);flex:none}
+.status.ok i{background:var(--green)}
+.status.err i{background:var(--red)}
+.status.load i{background:var(--sun);animation:pulse 1s infinite alternate}
+@keyframes pulse{to{transform:scale(.7)}}
+
+.ask{display:grid;gap:18px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:800px){.ask{grid-template-columns:minmax(0,380px) minmax(0,1fr);align-items:start}}
+.stage{aspect-ratio:1;width:100%;max-width:100%;border:3px dashed var(--line);border-radius:20px;background:var(--soft);display:grid;place-items:center;overflow:hidden;text-align:center;padding:12px;color:var(--muted);font-weight:700}
+.stage.drag{background:var(--sun);color:#16213E}
+.stage img,.stage canvas{width:100%;height:100%;object-fit:cover;display:block;border-radius:14px}
+.stage.has{padding:0;border-style:solid}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.actions .btn{flex:1 1 150px}
+.privacy{margin-top:12px;font-size:.9rem;color:var(--muted)}
+
+.steps{display:grid;gap:12px;margin-top:6px;padding:0;list-style:none;counter-reset:s}
+.steps li{display:flex;gap:12px;align-items:center;font-weight:700}
+.steps li::before{counter-increment:s;content:counter(s);flex:none;width:34px;height:34px;border-radius:50%;background:var(--sun);color:#16213E;border:3px solid var(--line);display:grid;place-items:center;font-family:var(--font-display);font-weight:800}
+
+.banner{border:3px solid var(--line);border-radius:18px;padding:14px 16px;background:var(--grey);color:var(--on-bin);display:grid;gap:4px}
+.banner small{font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:.78rem}
+.banner h2{font-size:1.7rem}
+.banner.organic{background:var(--green)} .banner.recycle{background:var(--blue)} .banner.residual{background:var(--grey)} .banner.hazard{background:var(--red)} .banner.unsure{background:var(--sun)}
+.res-body{display:grid;gap:14px;margin-top:14px}
+.meter{height:20px;border:3px solid var(--line);border-radius:999px;background:var(--soft);overflow:hidden}
+.meter span{display:block;height:100%;background:var(--ink);border-radius:999px 0 0 999px;width:0;transition:width .4s}
+.row{display:flex;justify-content:space-between;gap:10px;font-weight:800}
+.tip{background:var(--soft);border-radius:14px;padding:10px 14px;border:2px solid var(--line)}
+.tops{display:grid;gap:8px}
+.top-line{display:grid;grid-template-columns:minmax(0,1fr) 3.2rem;gap:4px 10px;align-items:center;font-size:.95rem}
+.top-line .meter{grid-column:1 / -1;height:12px;border-width:2px}
+.top-line b{text-align:right;font-variant-numeric:tabular-nums}
+.warn{font-weight:700}
+.fb{border-top:3px dashed var(--line);padding-top:14px;display:grid;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:3px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 14px;font-weight:800;cursor:pointer}
+.chip:hover{background:var(--sun);color:#16213E}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:800;z-index:20;max-width:calc(100% - 32px);text-align:center}
+
+/* Thử thách */
+.game{max-width:640px;margin:0 auto;display:grid;gap:16px}
+.scorebar{display:flex;justify-content:space-between;gap:10px;font-weight:800;flex-wrap:wrap}
+.pill{border:3px solid var(--line);border-radius:999px;padding:2px 14px;background:var(--card);font-variant-numeric:tabular-nums}
+.item{text-align:center;padding:26px 12px;display:grid;gap:6px}
+.item small{color:var(--muted);font-weight:800}
+.item h2{font-size:clamp(1.8rem,7vw,2.6rem)}
+.binbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.binbtn{border:3px solid var(--line);border-radius:18px;padding:14px 10px;font-weight:800;font-size:1rem;cursor:pointer;color:#16213E;box-shadow:0 4px 0 var(--line);min-height:64px;font-family:var(--font-body)}
+.binbtn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.binbtn.organic{background:var(--green)} .binbtn.recycle{background:var(--blue)} .binbtn.residual{background:var(--grey)} .binbtn.hazard{background:var(--red)}
+.binbtn[disabled]{cursor:default}
+.binbtn.right{outline:5px solid var(--ink);outline-offset:2px}
+.binbtn.wrong{opacity:.45}
+.explain{border-radius:16px;padding:12px 16px;font-weight:700;border:3px solid var(--line)}
+.explain.good{background:var(--green);color:#16213E}
+.explain.bad{background:var(--sun);color:#16213E}
+
+/* Thùng rác */
+.binsgrid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr))}
+.bincard{padding:0;overflow:hidden}
+.bincard header{padding:14px 18px;border-bottom:3px solid var(--line);color:#16213E}
+.bincard header.organic{background:var(--green)} .bincard header.recycle{background:var(--blue)} .bincard header.residual{background:var(--grey)} .bincard header.hazard{background:var(--red)}
+.bincard .in{padding:14px 18px;display:grid;gap:10px}
+.bincard ul{margin:0;padding-left:1.2rem}
+.note{color:var(--muted);font-size:.92rem}
+
+/* Thầy cô */
+.stack{display:grid;gap:18px}
+.table-wrap{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.93rem;font-variant-numeric:tabular-nums}
+th,td{border-bottom:2px solid var(--soft);padding:7px 10px;text-align:left;white-space:nowrap}
+th{font-weight:800;border-bottom:3px solid var(--line)}
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.kpi{border:3px solid var(--line);border-radius:16px;padding:10px 14px;background:var(--soft)}
+.kpi b{display:block;font-family:var(--font-display);font-size:1.7rem;line-height:1.1}
+.kpi span{font-size:.88rem;color:var(--muted);font-weight:700}
+.tag{display:inline-block;border:2px solid var(--line);border-radius:999px;padding:0 10px;font-weight:800;font-size:.82rem}
+.tag.pass{background:var(--green);color:#16213E}.tag.fail{background:var(--red);color:#16213E}.tag.na{background:var(--soft)}
+ul.clean{margin:0;padding-left:1.2rem;display:grid;gap:6px}
+.btnrow{display:flex;flex-wrap:wrap;gap:10px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a class="brand" href="#hoi-ai" aria-label="Rác Đi Đâu, về trang chính">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21" fill="#2EC27E" stroke="#16213E" stroke-width="3"/><g fill="none" stroke="#16213E" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21l5-9 3 5"/><path d="M33 20l4 7-6 1"/><path d="M26 37h-9l-3-5"/><path d="M21 12l-2 5 5 1"/></g></svg>
+      Rác Đi Đâu?
+    </a>
+    <nav class="tabs" aria-label="Chọn mục">
+      <a href="#hoi-ai" data-tab="hoi-ai">Hỏi AI</a>
+      <a href="#thu-thach" data-tab="thu-thach">Thử thách</a>
+      <a href="#thung-rac" data-tab="thung-rac">Thùng rác</a>
+      <a href="#thay-co" data-tab="thay-co">Thầy cô</a>
+    </nav>
+  </div>
+
+  <!-- HỎI AI -->
+  <main id="view-hoi-ai" data-view="hoi-ai">
+    <section class="hero">
+      <h1>Rác này bỏ vào <mark>đâu</mark> nhỉ?</h1>
+      <p>Chụp hoặc chọn một tấm ảnh rác, AI sẽ gợi ý thùng phù hợp. Bạn vẫn là người quyết định cuối cùng nhé.</p>
+      <span id="status" class="status load" role="status"><i></i><span id="status-text">Đang tải AI...</span></span>
+    </section>
+
+    <div class="ask">
+      <section class="card" aria-label="Ảnh rác">
+        <div id="stage" class="stage" tabindex="0">
+          <div>
+            <p style="font-family:var(--font-display);font-size:1.3rem;color:var(--ink)">Chưa có ảnh</p>
+            <p>Kéo ảnh vào đây, hoặc dùng các nút bên dưới.</p>
+          </div>
+        </div>
+        <div class="actions">
+          <label class="btn" for="file-in" id="btn-file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="11" r="2"/><path d="M21 16l-5-5-8 8"/></svg>
+            Chụp / chọn ảnh
+          </label>
+          <input id="file-in" type="file" accept="image/*" hidden>
+          <button class="btn blue" id="btn-cam" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            Mở camera
+          </button>
+          <button class="btn green" id="btn-freeze" type="button" hidden>Chốt kết quả</button>
+        </div>
+        <p class="privacy">Ảnh chỉ được xử lý ngay trên thiết bị của bạn, không gửi đi đâu cả.</p>
+      </section>
+
+      <section class="card" aria-live="polite" aria-label="Kết quả của AI">
+        <div id="result">
+          <h2>Cách dùng</h2>
+          <ol class="steps" style="margin-top:14px">
+            <li>Đặt một món rác vào giữa ảnh, nền càng gọn càng tốt.</li>
+            <li>Chụp hoặc chọn ảnh, chờ AI một chút.</li>
+            <li>Xem gợi ý, rồi bỏ rác vào đúng thùng.</li>
+          </ol>
+          <p class="note" style="margin-top:14px">Mẹo: ánh sáng đủ và chỉ một món rác trong ảnh sẽ giúp AI đoán đúng hơn.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- THỬ THÁCH -->
+  <section id="view-thu-thach" data-view="thu-thach" hidden>
+    <div class="game">
+      <div class="hero" style="margin-bottom:0">
+        <h1>Thử thách <mark>phân loại</mark></h1>
+        <p>8 món rác, mỗi món chọn một thùng. Làm đúng liên tiếp để có chuỗi điểm cao.</p>
+      </div>
+      <div class="scorebar"><span class="pill" id="g-prog">Câu 1/8</span><span class="pill" id="g-score">Điểm 0</span><span class="pill" id="g-streak">Chuỗi 0</span></div>
+      <div id="g-play" class="stack" style="gap:16px">
+        <div class="card item"><small>Món rác này bỏ vào thùng nào?</small><h2 id="g-item">...</h2></div>
+        <div class="binbtns" id="g-bins"></div>
+        <div id="g-explain" class="explain" hidden></div>
+        <div><button class="btn" id="g-next" type="button" hidden>Câu tiếp theo</button></div>
+      </div>
+      <div id="g-end" class="card" hidden>
+        <h2 id="g-end-title">Hoàn thành!</h2>
+        <p id="g-end-text" style="margin:8px 0 14px"></p>
+        <button class="btn" id="g-again" type="button">Chơi lại</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- THÙNG RÁC -->
+  <section id="view-thung-rac" data-view="thung-rac" hidden>
+    <div class="hero">
+      <h1>Bốn loại <mark>thùng</mark></h1>
+      <p>Học cách phân biệt trước, bạn sẽ không cần nghĩ nhiều khi đứng trước thùng rác.</p>
+    </div>
+    <div class="binsgrid" id="bins-grid"></div>
+    <p class="note" style="margin-top:16px">Tên gọi và màu thùng có thể khác nhau giữa các trường và địa phương. Hãy làm theo hướng dẫn của nhà trường.</p>
+  </section>
+
+  <!-- THẦY CÔ -->
+  <section id="view-thay-co" data-view="thay-co" hidden>
+    <div class="hero">
+      <h1>Góc <mark>thầy cô</mark></h1>
+      <p>Theo dõi mô hình AI, mức độ chính xác theo đánh giá của học sinh và những lưu ý khi dùng AI ở trường.</p>
+    </div>
+    <div class="stack">
+      <section class="card">
+        <h2>Mô hình đang dùng</h2>
+        <p class="note" id="model-url" style="margin:6px 0 12px"></p>
+        <div class="table-wrap"><table id="label-table"><thead><tr><th>Nhãn của mô hình</th><th>Nhóm thùng hiển thị</th></tr></thead><tbody></tbody></table></div>
+        <p class="note" style="margin-top:10px">Nếu một nhãn bị xếp sai nhóm, thêm nó vào bảng <code>LABEL_MAP</code> ở đầu phần script của tệp này (ví dụ <code>"Class 1": "recycle"</code>).</p>
+      </section>
+
+      <section class="card">
+        <h2>Học sinh đánh giá AI</h2>
+        <p class="note" style="margin:6px 0 14px">Sau mỗi lần phân loại, học sinh chọn "Đúng rồi" hoặc "Chưa đúng". Số liệu lưu trên trình duyệt này.</p>
+        <div class="kpis" id="kpis"></div>
+        <div class="table-wrap" style="margin-top:16px"><table id="stat-table"><thead><tr><th>Nhóm</th><th>AI đoán</th><th>Precision</th><th>Thực tế</th><th>Recall</th><th>F1</th></tr></thead><tbody></tbody></table></div>
+        <div id="confusions" style="margin-top:16px"></div>
+        <p class="note" style="margin-top:12px">Ngưỡng tham chiếu: Accuracy từ 85%, Precision, Recall và F1 từ 80%. Đây là đánh giá tự báo của học sinh, chỉ mang tính tham khảo, không thay cho bộ ảnh kiểm thử có nhãn của chuyên gia. Nên có từ 30 lượt đánh giá trở lên mới đáng tin.</p>
+        <div class="btnrow" style="margin-top:14px">
+          <button class="btn small blue" id="btn-csv" type="button">Tải CSV</button>
+          <button class="btn small plain" id="btn-clear" type="button">Xóa số liệu</button>
+          <button class="btn small" id="btn-clear-yes" type="button" hidden>Xác nhận xóa</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Dùng AI có trách nhiệm</h2>
+        <ul class="clean" style="margin-top:12px">
+          <li><b>Quyền riêng tư:</b> ảnh chỉ chạy trên thiết bị, ứng dụng không gửi ảnh đi. Nhắc học sinh không chụp người hoặc khuôn mặt.</li>
+          <li><b>AI có thể sai:</b> mô hình chỉ biết những gì nó đã được dạy. Khi độ tin cậy thấp, ứng dụng nhắc học sinh hỏi thầy cô thay vì làm theo.</li>
+          <li><b>Thiên lệch dữ liệu:</b> nhóm rác ít ảnh hoặc ảnh chụp khác điều kiện huấn luyện (ánh sáng, nền, góc chụp) thường bị đoán sai nhiều hơn. Dùng bảng thống kê phía trên để tìm các cặp nhầm lẫn rồi bổ sung ảnh.</li>
+          <li><b>Tiết kiệm tài nguyên:</b> mô hình nhẹ chạy ngay trên máy, không cần máy chủ riêng, nên tốn ít điện và không cần mạng sau khi tải xong.</li>
+          <li><b>Mục đích:</b> ứng dụng để học và tập thói quen tốt, không dùng để chấm điểm hay xếp loại học sinh.</li>
+        </ul>
+      </section>
+    </div>
+  </section>
+</div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+<script>
+"use strict";
+/* ============ CẤU HÌNH ============ */
+const CONFIG = {
+  MODEL_URL: "https://teachablemachine.withgoogle.com/models/f31UO1MoS/",
+  OK: 0.80,    // từ mức này: "AI khá chắc chắn"
+  LOW: 0.60,   // dưới mức này: "AI chưa chắc chắn"
+  // Nếu nhãn của mô hình bị xếp sai nhóm, ghi đè tại đây. Nhóm hợp lệ: organic, recycle, residual, hazard
+  LABEL_MAP: {
+    // "Class 1": "recycle",
+  }
+};
+
+const BINS = {
+  organic:  {name:"Thùng thực phẩm / hữu cơ", short:"Hữu cơ",   tip:"Đổ bỏ hết nước, không bỏ túi nilon vào cùng. Có thể ủ làm phân."},
+  recycle:  {name:"Thùng tái chế",            short:"Tái chế",  tip:"Làm sạch, để khô, ép dẹp cho gọn trước khi bỏ."},
+  residual: {name:"Thùng rác còn lại",        short:"Còn lại",  tip:"Những thứ bẩn, ướt hoặc không tái chế được thì bỏ vào đây."},
+  hazard:   {name:"Nơi thu gom rác nguy hại", short:"Nguy hại", tip:"Không bỏ chung với rác thường. Đưa cho thầy cô hoặc điểm thu gom riêng."},
+  unknown:  {name:"Chưa có hướng dẫn",        short:"Chưa rõ",  tip:"Mình chưa biết nhóm này thuộc thùng nào. Hãy hỏi thầy cô."}
+};
+
+const BIN_INFO = {
+  organic:  {examples:["Cơm, đồ ăn thừa","Vỏ rau, củ, quả","Xương, vỏ trứng","Bã trà, bã cà phê","Lá cây, cỏ"], note:"Có thể ủ thành phân bón cho vườn trường."},
+  recycle:  {examples:["Chai nhựa, can nhựa","Lon nước ngọt, lon bia","Giấy, báo, vở cũ, bìa carton","Chai, lọ thủy tinh","Hộp sữa giấy đã rửa sạch"], note:"Rửa sạch, để khô, ép dẹp. Chai thủy tinh vỡ nên bọc giấy cẩn thận."},
+  residual: {examples:["Khăn giấy đã dùng","Vỏ bim bim, vỏ kẹo","Ống hút, thìa nhựa dùng một lần","Hộp xốp dính thức ăn","Gốm sứ vỡ, bàn chải cũ"], note:"Món nào bẩn hoặc không tái chế được sẽ rơi vào nhóm này."},
+  hazard:   {examples:["Pin cũ, ắc quy","Bóng đèn huỳnh quang","Thuốc hết hạn","Nhiệt kế thủy ngân","Hộp sơn, dung môi, đồ điện tử hỏng"], note:"Chứa chất độc, không bỏ chung. Báo thầy cô hoặc cán bộ môi trường."}
+};
+
+/* Gợi ý riêng theo vật liệu (so khớp theo tên nhãn, đã bỏ dấu) */
+const MATERIAL_TIPS = [
+  [/chai.*(nhua|pet)|nhua|plastic|bottle/, "Đổ hết nước, vặn nắp, bóp dẹp chai cho gọn."],
+  [/giay|paper|carton|bia|cardboard/,      "Giữ giấy khô ráo, gấp gọn. Giấy dính dầu mỡ thì bỏ thùng còn lại."],
+  [/kim loai|metal|lon|can\b/,             "Rửa qua lon, ép dẹp nếu được."],
+  [/thuy tinh|glass/,                      "Cầm cẩn thận, chai vỡ nên bọc giấy dày trước khi bỏ."],
+  [/pin|battery/,                          "Pin chứa kim loại nặng, tuyệt đối không bỏ chung rác thường."]
+];
+
+/* ============ TIỆN ÍCH ============ */
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d').replace(/Đ/g,'d').toLowerCase();
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(()=>{ t.hidden = true; }, 2600);
+}
+function groupOf(label){
+  if (CONFIG.LABEL_MAP[label]) return CONFIG.LABEL_MAP[label];
+  const n = norm(label);
+  if (/nguy hai|hazard|pin\b|battery|ac quy|hoa chat|bong den|thuoc|nhiet ke|dien tu|e-?waste|thuy ngan/.test(n)) return 'hazard';
+  if (/khong tai che|con lai|vo co\b|residual|general|khan giay|tissue|xop|styrofoam|nilon|nylon|bim bim|ong hut|other|khac/.test(n)) return 'residual';
+  if (/huu co|organic|thuc pham|food|rau|trai cay|hoa qua|la cay|com thua|bo thuc an|compost|bia an/.test(n)) return 'organic';
+  if (/tai che|recycl|nhua|plastic|chai|giay|paper|carton|cardboard|kim loai|metal|lon\b|can\b|thuy tinh|glass|bia\b/.test(n)) return 'recycle';
+  return 'unknown';
+}
+function materialTip(label){
+  const n = norm(label);
+  for (const [re, tip] of MATERIAL_TIPS) if (re.test(n)) return tip;
+  return null;
+}
+
+/* ============ ĐIỀU HƯỚNG ============ */
+const TABS = ['hoi-ai','thu-thach','thung-rac','thay-co'];
+function route(){
+  let h = location.hash.replace('#','');
+  if (!TABS.includes(h)) h = 'hoi-ai';
+  document.querySelectorAll('[data-view]').forEach(v => { v.hidden = v.dataset.view !== h; });
+  document.querySelectorAll('.tabs a').forEach(a => {
+    if (a.dataset.tab === h) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+  });
+  if (h !== 'hoi-ai') stopCam();
+  if (h === 'thay-co') renderTeacher();
+  window.scrollTo({top:0});
+}
+window.addEventListener('hashchange', route);
+
+/* ============ MÔ HÌNH AI ============ */
+let model = null, labels = [];
+function setStatus(kind, text){
+  const s = $('#status'); s.className = 'status ' + kind; $('#status-text').textContent = text;
+}
+async function loadModel(){
+  setStatus('load','Đang tải AI...');
+  try{
+    if (typeof tmImage === 'undefined') throw new Error('Không tải được thư viện AI');
+    model = await tmImage.load(CONFIG.MODEL_URL + 'model.json', CONFIG.MODEL_URL + 'metadata.json');
+    labels = model.getClassLabels();
+    setStatus('ok','AI đã sẵn sàng');
+  }catch(e){
+    console.error(e);
+    model = null;
+    setStatus('err','Chưa tải được AI. Kiểm tra mạng rồi bấm để thử lại');
+  }
+}
+$('#status').addEventListener('click', () => { if (!model) loadModel(); });
+
+/* ============ HỎI AI ============ */
+let current = null;      // {preds, done}
+let webcam = null, live = false, raf = 0, busy = false, lastT = 0;
+const stage = $('#stage');
+
+function setStageNode(node){
+  stage.classList.add('has'); stage.replaceChildren(node);
+}
+async function predict(el){
+  const raw = await model.predict(el);
+  return raw.map(p => ({className:p.className, probability:p.probability})).sort((a,b)=>b.probability-a.probability);
+}
+async function analyze(el){
+  if (!model){
+    $('#result').innerHTML = '<h2>AI chưa tải xong</h2><p class="note" style="margin-top:8px">Ảnh của bạn đã mở được, nhưng AI chưa sẵn sàng để phân loại. Hãy kiểm tra mạng, mở ứng dụng bằng Chrome hoặc từ một trang web (không mở trong khung xem trước), rồi bấm vào dòng trạng thái màu đỏ ở trên để tải lại.</p>';
+    return;
+  }
+  $('#result').innerHTML = '<h2>AI đang xem ảnh...</h2><p class="note" style="margin-top:8px">Chờ một chút nhé.</p>';
+  try{
+    const preds = await predict(el);
+    current = {preds, done:false};
+    showResult(preds, false);
+  }catch(e){
+    console.error(e);
+    $('#result').innerHTML = '<h2>Ôi, có lỗi</h2><p class="note" style="margin-top:8px">AI chưa đọc được ảnh này. Bạn thử ảnh khác nhé.</p>';
+  }
+}
+/* Đọc ảnh bằng nhiều cách, rồi vẽ lên canvas cỡ vừa phải để AI xử lý ổn định */
+function toCanvas(src, w, h){
+  const k = Math.min(1, 640 / Math.max(w, h));
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+  c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+  return c;
+}
+function readAsDataURL(file){
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(file); });
+}
+function loadImg(url){
+  return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('img')); i.src = url; });
+}
+async function decodeImage(file){
+  if (window.createImageBitmap){
+    try{ const b = await createImageBitmap(file); const c = toCanvas(b, b.width, b.height); if (b.close) b.close(); return c; }catch(e){}
+  }
+  try{ const u = URL.createObjectURL(file); const i = await loadImg(u); URL.revokeObjectURL(u); return toCanvas(i, i.naturalWidth, i.naturalHeight); }catch(e){}
+  const i = await loadImg(await readAsDataURL(file));
+  return toCanvas(i, i.naturalWidth, i.naturalHeight);
+}
+async function handleFile(file){
+  if (!file) return;
+  const okType = (file.type || '').startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp|avif|heic|heif)$/i.test(file.name || '');
+  if (!okType){ toast('Hãy chọn một tệp ảnh nhé'); return; }
+  stopCam();
+  try{
+    const canvas = await decodeImage(file);
+    canvas.setAttribute('role','img'); canvas.setAttribute('aria-label','Ảnh rác bạn đã chọn');
+    setStageNode(canvas);
+    analyze(canvas);
+  }catch(e){
+    console.error(e);
+    $('#result').innerHTML = '<h2>Không mở được ảnh này</h2><p class="note" style="margin-top:8px">Trình duyệt không đọc được định dạng ảnh. Ảnh HEIC của iPhone là nguyên nhân hay gặp. Bạn hãy bấm "Chụp / chọn ảnh" rồi chụp trực tiếp, hoặc đổi ảnh sang JPG hay PNG.</p>';
+  }
+}
+$('#file-in').addEventListener('change', e => { handleFile(e.target.files[0]); e.target.value=''; });
+['dragenter','dragover'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); stage.classList.remove('drag'); }));
+stage.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+
+async function startCam(){
+  if (!model){ toast('AI chưa sẵn sàng, bạn chờ một chút nhé'); return; }
+  stopCam();
+  try{
+    webcam = new tmImage.Webcam(360, 360, false);
+    try{ await webcam.setup({facingMode:'environment'}); }
+    catch(e){ webcam = new tmImage.Webcam(360, 360, true); await webcam.setup(); }
+    await webcam.play();
+  }catch(e){
+    console.error(e); webcam = null;
+    toast('Không mở được camera. Hãy dùng nút Chụp / chọn ảnh.');
+    return;
+  }
+  live = true; current = null;
+  setStageNode(webcam.canvas);
+  $('#btn-freeze').hidden = false;
+  raf = requestAnimationFrame(loop);
+}
+function loop(ts){
+  if (!live) return;
+  webcam.update();
+  if (!busy && ts - lastT > 450){
+    busy = true; lastT = ts;
+    predict(webcam.canvas).then(p => { if (live) showResult(p, true); }).catch(console.error).finally(() => { busy = false; });
+  }
+  raf = requestAnimationFrame(loop);
+}
+function stopCam(){
+  live = false; cancelAnimationFrame(raf);
+  if (webcam){ try{ webcam.stop(); }catch(e){} webcam = null; }
+  $('#btn-freeze').hidden = true;
+}
+function freeze(){
+  if (!webcam) return;
+  const img = new Image();
+  img.alt = 'Ảnh vừa chụp từ camera';
+  img.onload = () => { stopCam(); setStageNode(img); analyze(img); };
+  img.src = webcam.canvas.toDataURL('image/jpeg', 0.92);
+}
+$('#btn-cam').addEventListener('click', startCam);
+$('#btn-freeze').addEventListener('click', freeze);
+
+function showResult(preds, isLive){
+  const top = preds[0], second = preds[1];
+  const pct = Math.round(top.probability * 100);
+  const g = groupOf(top.className), info = BINS[g];
+  const sure = top.probability >= CONFIG.LOW;
+  let msg;
+  if (top.probability >= CONFIG.OK) msg = 'AI khá chắc chắn.';
+  else if (sure) msg = 'AI đoán vậy, bạn hãy kiểm tra lại nhé.';
+  else msg = 'AI chưa chắc chắn. Hãy hỏi thầy cô hoặc bạn bè trước khi bỏ rác.';
+  const mTip = materialTip(top.className);
+  const banner = sure
+    ? `<div class="banner ${g}"><small>Bỏ vào</small><h2>${esc(info.name)}</h2><span>Món này giống: <b>${esc(top.className)}</b></span></div>`
+    : `<div class="banner unsure"><small>Chưa chắc chắn</small><h2>Có thể là ${esc(top.className)}</h2><span>Hoặc ${esc(second ? second.className : '...')}. Hãy kiểm tra lại.</span></div>`;
+  const tops = preds.slice(0,3).map(p => {
+    const v = Math.round(p.probability*100);
+    return `<div class="top-line"><span>${esc(p.className)}</span><b>${v}%</b><div class="meter" aria-hidden="true"><span style="width:${v}%"></span></div></div>`;
+  }).join('');
+  $('#result').innerHTML = `
+    ${banner}
+    <div class="res-body">
+      <div><div class="row"><span>Độ tin cậy</span><span>${pct}%</span></div>
+        <div class="meter" role="img" aria-label="Độ tin cậy ${pct} phần trăm"><span style="width:${pct}%"></span></div></div>
+      <p class="warn">${msg}</p>
+      ${sure ? `<div class="tip"><b>Lưu ý:</b> ${esc(mTip || info.tip)}</div>` : ''}
+      <div class="tops"><h3>AI đang phân vân giữa</h3>${tops}</div>
+      ${isLive ? '<p class="note">Đang xem trực tiếp. Bấm "Chốt kết quả" để chụp lại và đánh giá.</p>' : '<div class="fb" id="fb"></div>'}
+    </div>`;
+  if (!isLive) renderFeedback();
+}
+
+/* ===== phản hồi của học sinh ===== */
+const KEY = 'radidau.feedback.v1';
+let memStore = [];
+function loadRecords(){ try{ return JSON.parse(localStorage.getItem(KEY) || '[]'); }catch(e){ return memStore; } }
+function saveRecords(r){ memStore = r; try{ localStorage.setItem(KEY, JSON.stringify(r)); }catch(e){} }
+function renderFeedback(){
+  const fb = $('#fb'); if (!fb || !current) return;
+  if (current.done){ fb.innerHTML = '<p class="note">Cảm ơn bạn đã đánh giá! Mỗi lượt giúp mình biết AI đúng hay sai ở đâu.</p>'; return; }
+  fb.innerHTML = `<h3>AI đoán có đúng không?</h3>
+    <div class="btnrow"><button class="btn green small" id="fb-yes" type="button">Đúng rồi</button><button class="btn plain small" id="fb-no" type="button">Chưa đúng</button></div>`;
+  $('#fb-yes').onclick = () => record(current.preds[0].className);
+  $('#fb-no').onclick = () => {
+    const pred = current.preds[0].className;
+    const opts = labels.filter(l => l !== pred).map(l => `<button class="chip" type="button" data-l="${esc(l)}">${esc(l)}</button>`).join('');
+    fb.innerHTML = `<h3>Vậy đó thật ra là gì?</h3><div class="chips">${opts}<button class="chip" type="button" data-l="(khác)">Không có trong danh sách</button></div>`;
+    fb.querySelectorAll('.chip').forEach(c => { c.onclick = () => record(c.dataset.l); });
+  };
+}
+function record(truth){
+  const top = current.preds[0];
+  const r = loadRecords();
+  r.push({t:new Date().toISOString(), pred:top.className, truth, conf:+top.probability.toFixed(3)});
+  saveRecords(r);
+  current.done = true; renderFeedback(); toast('Đã ghi nhận. Cảm ơn bạn!');
+}
+
+/* ============ THỬ THÁCH ============ */
+const ITEMS = [
+  ['Vỏ chuối','organic','Vỏ chuối là rác hữu cơ, ủ lên sẽ thành phân bón.'],
+  ['Cơm thừa','organic','Đồ ăn thừa thuộc nhóm thực phẩm.'],
+  ['Xương cá','organic','Xương là chất thải thực phẩm.'],
+  ['Bã trà','organic','Bã trà, bã cà phê là rác hữu cơ.'],
+  ['Lá cây khô','organic','Lá cây phân hủy tự nhiên, thuộc nhóm hữu cơ.'],
+  ['Vỏ cam','organic','Vỏ trái cây là rác hữu cơ.'],
+  ['Chai nước nhựa rỗng','recycle','Chai nhựa sạch tái chế được. Nhớ đổ hết nước và bóp dẹp.'],
+  ['Lon nước ngọt','recycle','Kim loại như nhôm tái chế rất tốt.'],
+  ['Báo cũ','recycle','Giấy khô, sạch thì tái chế được.'],
+  ['Hộp bìa carton','recycle','Bìa carton gấp dẹp rồi bỏ vào thùng tái chế.'],
+  ['Chai thủy tinh','recycle','Thủy tinh tái chế được nhiều lần. Cẩn thận khi vỡ.'],
+  ['Vở cũ đã dùng hết','recycle','Giấy vở tái chế được nếu còn khô ráo.'],
+  ['Khăn giấy đã dùng','residual','Khăn giấy dính bẩn không tái chế được.'],
+  ['Vỏ gói bim bim','residual','Bao bì nhiều lớp rất khó tái chế, thuộc rác còn lại.'],
+  ['Ống hút nhựa','residual','Ống hút nhỏ và nhẹ, thường được xếp vào rác còn lại.'],
+  ['Hộp xốp dính thức ăn','residual','Xốp dính thức ăn bẩn nên không tái chế được.'],
+  ['Bàn chải đánh răng cũ','residual','Bàn chải làm từ nhiều chất liệu trộn, bỏ vào rác còn lại.'],
+  ['Mảnh chén sứ vỡ','residual','Gốm sứ không tái chế như thủy tinh, thuộc rác còn lại.'],
+  ['Pin cũ','hazard','Pin có kim loại nặng, phải thu gom riêng.'],
+  ['Bóng đèn huỳnh quang hỏng','hazard','Bóng đèn huỳnh quang chứa thủy ngân, là rác nguy hại.'],
+  ['Thuốc hết hạn','hazard','Thuốc hết hạn là rác nguy hại, không vứt bừa bãi.'],
+  ['Nhiệt kế thủy ngân vỡ','hazard','Thủy ngân rất độc. Đừng chạm tay, hãy báo người lớn.'],
+  ['Hộp sơn còn dư','hazard','Sơn và dung môi là rác nguy hại.'],
+  ['Điện thoại cũ bị hỏng','hazard','Đồ điện tử hỏng chứa pin và kim loại nặng, cần thu gom riêng.']
+];
+const G = {i:0, score:0, streak:0, best:0, round:[], locked:false};
+function shuffle(a){ a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function gameStart(){
+  G.i=0; G.score=0; G.streak=0; G.best=0; G.round = shuffle(ITEMS).slice(0,8);
+  $('#g-end').hidden = true; $('#g-play').hidden = false; gameShow();
+}
+function gameShow(){
+  const it = G.round[G.i]; G.locked = false;
+  $('#g-item').textContent = it[0];
+  $('#g-prog').textContent = `Câu ${G.i+1}/${G.round.length}`;
+  $('#g-score').textContent = `Điểm ${G.score}`;
+  $('#g-streak').textContent = `Chuỗi ${G.streak}`;
+  $('#g-explain').hidden = true; $('#g-next').hidden = true;
+  const box = $('#g-bins'); box.replaceChildren();
+  ['organic','recycle','residual','hazard'].forEach(k => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'binbtn ' + k; b.dataset.k = k; b.textContent = BINS[k].short;
+    b.addEventListener('click', () => gameAnswer(k));
+    box.appendChild(b);
+  });
+}
+function gameAnswer(k){
+  if (G.locked) return; G.locked = true;
+  const it = G.round[G.i], ok = k === it[1];
+  if (ok){ G.score += 10 + Math.min(G.streak, 5) * 2; G.streak++; G.best = Math.max(G.best, G.streak); } else G.streak = 0;
+  $('#g-bins').querySelectorAll('.binbtn').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.k === it[1]) b.classList.add('right'); else b.classList.add('wrong');
+  });
+  const ex = $('#g-explain'); ex.hidden = false;
+  ex.className = 'explain ' + (ok ? 'good' : 'bad');
+  ex.textContent = (ok ? 'Chính xác! ' : `Chưa đúng, món này thuộc "${BINS[it[1]].short}". `) + it[2];
+  $('#g-score').textContent = `Điểm ${G.score}`; $('#g-streak').textContent = `Chuỗi ${G.streak}`;
+  const n = $('#g-next'); n.hidden = false; n.textContent = G.i + 1 >= G.round.length ? 'Xem kết quả' : 'Câu tiếp theo'; n.focus();
+}
+$('#g-next').addEventListener('click', () => {
+  G.i++;
+  if (G.i >= G.round.length){
+    $('#g-play').hidden = true; $('#g-end').hidden = false;
+    $('#g-end-text').textContent = `Bạn được ${G.score} điểm, chuỗi đúng dài nhất là ${G.best} câu.`;
+  } else gameShow();
+});
+$('#g-again').addEventListener('click', gameStart);
+
+/* ============ THÙNG RÁC ============ */
+function renderBins(){
+  $('#bins-grid').innerHTML = ['organic','recycle','residual','hazard'].map(k => `
+    <article class="card bincard">
+      <header class="${k}"><h2>${esc(BINS[k].name)}</h2></header>
+      <div class="in">
+        <h3>Ví dụ</h3>
+        <ul>${BIN_INFO[k].examples.map(e => `<li>${esc(e)}</li>`).join('')}</ul>
+        <p class="note">${esc(BIN_INFO[k].note)}</p>
+      </div>
+    </article>`).join('');
+}
+
+/* ============ THẦY CÔ ============ */
+const pc = v => v == null ? '-' : Math.round(v*100) + '%';
+function renderTeacher(){
+  $('#model-url').textContent = 'Nguồn: ' + CONFIG.MODEL_URL;
+  const tb = $('#label-table tbody');
+  tb.innerHTML = labels.length
+    ? labels.map(l => `<tr><td>${esc(l)}</td><td>${esc(BINS[groupOf(l)].short)}</td></tr>`).join('')
+    : '<tr><td colspan="2">Chưa tải được mô hình nên chưa có danh sách nhãn.</td></tr>';
+
+  const rec = loadRecords();
+  const n = rec.length, right = rec.filter(r => r.pred === r.truth).length;
+  const acc = n ? right / n : null;
+  const names = Array.from(new Set([...labels, ...rec.map(r => r.pred), ...rec.map(r => r.truth)]));
+  const rows = names.map(c => {
+    const pN = rec.filter(r => r.pred === c).length;
+    const tN = rec.filter(r => r.truth === c).length;
+    const tp = rec.filter(r => r.pred === c && r.truth === c).length;
+    const P = pN ? tp/pN : null, R = tN ? tp/tN : null;
+    const F = (P != null && R != null && P+R > 0) ? 2*P*R/(P+R) : null;
+    return {c, pN, tN, P, R, F};
+  }).filter(r => r.pN || r.tN);
+  const ok = (v, t) => v == null ? 'na' : (v >= t ? 'pass' : 'fail');
+  $('#kpis').innerHTML = `
+    <div class="kpi"><b>${n}</b><span>lượt đánh giá</span></div>
+    <div class="kpi"><b>${pc(acc)}</b><span>Accuracy <span class="tag ${ok(acc,.85)}">${acc==null?'chưa có':(acc>=.85?'đạt':'chưa đạt')}</span></span></div>`;
+  $('#stat-table tbody').innerHTML = rows.length ? rows.map(r => `<tr><td>${esc(r.c)}</td><td>${r.pN}</td><td>${pc(r.P)} <span class="tag ${ok(r.P,.8)}">${r.P==null?'-':(r.P>=.8?'đạt':'thấp')}</span></td><td>${r.tN}</td><td>${pc(r.R)} <span class="tag ${ok(r.R,.8)}">${r.R==null?'-':(r.R>=.8?'đạt':'thấp')}</span></td><td>${pc(r.F)}</td></tr>`).join('')
+    : '<tr><td colspan="6">Chưa có đánh giá nào. Hãy thử phân loại vài món rác ở mục Hỏi AI.</td></tr>';
+  const conf = {};
+  rec.filter(r => r.pred !== r.truth).forEach(r => { const k = r.pred + ' → ' + r.truth; conf[k] = (conf[k]||0) + 1; });
+  const list = Object.entries(conf).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  $('#confusions').innerHTML = list.length
+    ? '<h3>Các cặp hay bị nhầm (AI đoán → thực tế)</h3><ul class="clean" style="margin-top:8px">' + list.map(([k,v]) => `<li>${esc(k)}: ${v} lần</li>`).join('') + '</ul>'
+    : '';
+}
+$('#btn-csv').addEventListener('click', () => {
+  const rec = loadRecords();
+  if (!rec.length){ toast('Chưa có số liệu để tải'); return; }
+  const q = s => '"' + String(s).replace(/"/g,'""') + '"';
+  const csv = '﻿time,predicted,truth,confidence,correct\n' + rec.map(r => [q(r.t),q(r.pred),q(r.truth),r.conf,r.pred===r.truth?1:0].join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = 'danh-gia-ai-phan-loai-rac.csv'; document.body.appendChild(a); a.click(); a.remove();
+});
+$('#btn-clear').addEventListener('click', () => { $('#btn-clear-yes').hidden = false; toast('Bấm "Xác nhận xóa" nếu bạn chắc chắn'); });
+$('#btn-clear-yes').addEventListener('click', () => { saveRecords([]); $('#btn-clear-yes').hidden = true; renderTeacher(); toast('Đã xóa số liệu'); });
+
+/* ============ KHỞI ĐỘNG ============ */
+renderBins();
+gameStart();
+route();
+loadModel();
+</script>
+</body>
+</html>
